@@ -71,8 +71,72 @@ class VectorSearchEngine:
         idx = np.argsort(-scores)[:num_results]
         return [{'score': scores[i], 'doc': self.documents[i]} for i in idx]
 
+
+def get_search_engine(root_dir):
+    models_dir = os.path.join(root_dir, 'pipelines-data')
+
+    index_file_path = os.path.join(models_dir, 'embeds_index.json')
+    embeds_file_path = os.path.join(models_dir, 'embeds.npy')
+    with open(index_file_path, 'r') as f:
+        index = json.load(f)
+    embeds = np.load(embeds_file_path)
+    print(f'Data loaded: {embeds.shape}, {len(index)}')
+
+    search_engine = VectorSearchEngine(documents=index, embeddings=embeds)
+    # embedder = get_or_create_embedder(models_dir, model_name='multi-qa-distilbert-cos-v1')
+    # v = embedder.encode(entry['query'])
+    # search_result = search_engine.search(v, num_results=30)
+    # return sum(res), len(res)
+
+def export_onnx(models_dir):
+    import onnxruntime
+    import torch
+    output_path = os.path.join(models_dir, 'model.onnx')
+    model = get_or_create_embedder(models_dir, model_name='multi-qa-distilbert-cos-v1')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = model.to(device)
+
+    sentences = ["This is a sample sentence for ONNX conversion."]
+
+    # Tokenize the sentence(s)
+    inputs = model.tokenize(sentences)
+
+    # Convert tokenized inputs to tensors
+    input_ids = torch.tensor(inputs['input_ids'], dtype=torch.long).to(device)
+    attention_mask = torch.tensor(inputs['attention_mask'], dtype=torch.long).to(device)
+
+    # Create a wrapper class to handle the forward pass
+    class ModelWrapper(torch.nn.Module):
+        def __init__(self, model):
+            super(ModelWrapper, self).__init__()
+            self.model = model
+
+        def forward(self, input_ids, attention_mask):
+            return self.model({'input_ids': input_ids, 'attention_mask': attention_mask})
+
+    # Wrap the model
+    wrapped_model = ModelWrapper(model)
+
+    # Export the model to ONNX
+    torch.onnx.export(
+        wrapped_model,
+        (input_ids, attention_mask),
+        output_path,
+        input_names=['input_ids', 'attention_mask'],
+        output_names=['sentence_embedding'],
+        dynamic_axes={
+            'input_ids': {0: 'batch_size', 1: 'sequence_length'},
+            'attention_mask': {0: 'batch_size', 1: 'sequence_length'},
+            'sentence_embedding': {0: 'batch_size'}
+        },
+        opset_version=11,
+        do_constant_folding=True
+    )
+    print(f'Model saved to {output_path}')
+
 if __name__ == '__main__':
     root_data_dir = os.environ['DATA_DIR']
     csv_data_path = os.path.join(root_data_dir, 'pipelines_data', 'knowledgebase.csv')
     index_entries = read_csv_as_dicts(csv_data_path)
-    eval_embeds(root_data_dir, index_entries)
+    # eval_embeds(root_data_dir, index_entries)
+    export_onnx(os.path.join(root_data_dir, 'pipelines_data', 'models'))

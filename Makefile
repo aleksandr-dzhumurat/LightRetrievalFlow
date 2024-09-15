@@ -32,3 +32,10 @@ prepare-embeds:
 	CONFIG_DIR=${CURRENT_DIR}  \
 	python3 src/light_retrieval_flow/vectorize.py
 
+inference:
+	PYTHONPATH=${CURRENT_DIR}/src \
+	DATA_DIR=${CURRENT_DIR}/data  \
+	CONFIG_DIR=${CURRENT_DIR}  \
+	python3 src/light_retrieval_flow/inference.py
+
+
