@@ -22,3 +22,5 @@ Inslall current repo
 ```shell
 pip install -e .
 ```
+
+https://github.com/aleksandr-dzhumurat/leaf-bro/blob/feature/add-alternative-search/jupyter_notebooks/eda.ipynb

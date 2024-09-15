@@ -5,7 +5,8 @@ include .env
 export
 
 prepare-dirs:
-	mkdir -p ${CURRENT_DIR}/data/zinc_data || true
+	mkdir -p ${CURRENT_DIR}/data/zinc_data || true && \
+	mkdir -p ${CURRENT_DIR}/data/pipelines_data || true
 
 run-zinc:
 	docker run -it --rm --network backtier \
@@ -19,5 +20,5 @@ run-zinc:
 run-jupyter:
 	PYTHONPATH=${CURRENT_DIR}/src \
 	DATA_DIR=${CURRENT_DIR}/data  \
-	python3 src/sweed_rnd/metrics/marketing.py \
-	jupyter notebook jupyter_notebooks --ip 0.0.0.0 --port 8899 --NotebookApp.token='' --NotebookApp.password='' --allow-root --no-browser 
+	CONFIG_DIR=${CURRENT_DIR}  \
+	jupyter notebook jupyter_notebooks --ip 0.0.0.0 --port 9999 --NotebookApp.token='' --NotebookApp.password='' --allow-root --no-browser 

@@ -1,0 +1,38 @@
+version: '3.7'
+services:
+  search:
+    image: public.ecr.aws/zinclabs/zincsearch:0.4.10
+    container_name: leafbro_elasticsearch
+    environment:
+      - ZINC_DATA_PATH="/data"
+      - ZINC_FIRST_ADMIN_USER=admin
+      - ZINC_FIRST_ADMIN_PASSWORD=admin
+    volumes:
+      - ./data/zinc_data:/data
+    ports:
+      - "4080:4080"
+    networks:
+      - backtier_network
+  api:
+    build:
+      context: .
+      dockerfile: ./services/api/Dockerfile
+    # command: >
+    #   uvicorn src.main:app  --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      - elasticsearch
+    env_file:
+      - .env
+    volumes:
+      - ./data:/srv/data
+      - ./services/api/src:/srv/src
+    ports:
+      - "8000:8000"
+    networks:
+      - backtier_network
+    container_name: api
+networks:
+  backtier_network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 1450
