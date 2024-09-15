@@ -6,7 +6,8 @@ export
 
 prepare-dirs:
 	mkdir -p ${CURRENT_DIR}/data/zinc_data || true && \
-	mkdir -p ${CURRENT_DIR}/data/pipelines_data || true
+	mkdir -p ${CURRENT_DIR}/data/pipelines_data || true && \
+	mkdir -p ${CURRENT_DIR}/data/pipelines_data/models || true
 
 run-zinc:
 	docker run -it --rm --network backtier \
@@ -18,7 +19,23 @@ run-zinc:
 	--name zincsearch public.ecr.aws/zinclabs/zincsearch:0.4.10
 
 run-jupyter:
+	source ~/.pyenv/versions/ltr-research/bin/activate  && \
+	\
 	PYTHONPATH=${CURRENT_DIR}/src \
 	DATA_DIR=${CURRENT_DIR}/data  \
 	CONFIG_DIR=${CURRENT_DIR}  \
-	jupyter notebook jupyter_notebooks --ip 0.0.0.0 --port 9999 --NotebookApp.token='' --NotebookApp.password='' --allow-root --no-browser 
+	jupyter notebook jupyter_notebooks --ip 0.0.0.0 --port 9999 --NotebookApp.token='' --NotebookApp.password='' --allow-root --no-browser
+
+prepare-embeds:
+	PYTHONPATH=${CURRENT_DIR}/src \
+	DATA_DIR=${CURRENT_DIR}/data  \
+	CONFIG_DIR=${CURRENT_DIR}  \
+	python3 src/light_retrieval_flow/vectorize.py
+
+inference:
+	PYTHONPATH=${CURRENT_DIR}/src \
+	DATA_DIR=${CURRENT_DIR}/data  \
+	CONFIG_DIR=${CURRENT_DIR}  \
+	python3 src/light_retrieval_flow/inference.py
+
+

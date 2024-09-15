@@ -8,6 +8,9 @@ import pandas as pd
 from typing import List
 
 
+from light_retrieval_flow.utils import clean_text, read_csv_as_dicts
+
+
 ZINCSEARCH_URL = os.environ["ZINCSEARCH_URL"]
 USERNAME=os.environ['ZINCSEARCH_USERNAME']
 PASSWORD=os.environ['ZINCSEARCH_PASSWORD']
@@ -23,54 +26,54 @@ def load_config(config_path):
         config = yaml.load(f, Loader=yaml.FullLoader)
     return config
 
-def create_index(index_name, config: dict):
+def create_index(index_config: dict):
     url = f"{ZINCSEARCH_URL}/api/index"
     headers = {"Content-Type": "application/json"}
-    index_config = {
-        "name": index_name,
-        "storage_type": "disk",
-        "shard_num": 1,
-        "mappings": {
-            "properties": {
-                "doc_id": {
-                    "type": "text",
-                    "index": True,
-                    "store": True,
-                    "highlightable": True
-                },
-                "content": {
-                    "type": "text",
-                    "index": True,
-                    "store": True,
-                    "highlightable": True
-                },
-                "category": {
-                    "type": "keyword",
-                    "index": True,
-                    "sortable": True,
-                    "aggregatable": True
-                },
-                "content_len": {
-                    "type": "integer",
-                    "index": True,
-                    "sortable": True,
-                    "aggregatable": False
-                }
-            }
-        },
-        "settings": {
-            "analysis": {
-                "analyzer": {
-                    "default": {
-                        "type": "standard"
-                    }
-                }
-            }
-        }
-    }
+    # index_config = {
+    #     "name": index_name,
+    #     "storage_type": "disk",
+    #     "shard_num": 1,
+    #     "mappings": {
+    #         "properties": {
+    #             "doc_id": {
+    #                 "type": "text",
+    #                 "index": True,
+    #                 "store": True,
+    #                 "highlightable": True
+    #             },
+    #             "content": {
+    #                 "type": "text",
+    #                 "index": True,
+    #                 "store": True,
+    #                 "highlightable": True
+    #             },
+    #             "category": {
+    #                 "type": "keyword",
+    #                 "index": True,
+    #                 "sortable": True,
+    #                 "aggregatable": True
+    #             },
+    #             "content_len": {
+    #                 "type": "integer",
+    #                 "index": True,
+    #                 "sortable": True,
+    #                 "aggregatable": False
+    #             }
+    #         }
+    #     },
+    #     "settings": {
+    #         "analysis": {
+    #             "analyzer": {
+    #                 "default": {
+    #                     "type": "standard"
+    #                 }
+    #             }
+    #         }
+    #     }
+    # }
     response = requests.post(url, headers=headers, data=json.dumps(index_config), auth=(USERNAME, PASSWORD))
     if response.status_code == 200:
-        print(f"Index '{index_name}' created successfully.")
+        print(f"Index {index_config['name']} created successfully.")
     else:
         print(f"Failed to create index: {response.status_code}, {response.text}")
 
@@ -85,19 +88,9 @@ def load_document(data, index_name):
 
 def load_bulk_documents(index_name, documents):
     for doc in documents:
-        cleaned_text = re.sub(r'\n+', ' ', doc['content'])
-        cleaned_text = re.sub(r'\t+', ' ', cleaned_text)
-        doc['content'] = cleaned_text
+        doc['content'] = clean_text(doc['content'])
         load_document(doc, index_name)
     print("Document loaded successfully.")
-
-def read_csv_as_dicts(csv_filepath) -> List:
-    """ input_filename = os.path.join(root_dir, 'data', 'pipelines-data', config['content_file_name'])
-    """
-    df = pd.read_csv(csv_filepath)
-    csv_entries = df.to_dict(orient='records')
-    print('Num entries: %d' % len(csv_entries))
-    return csv_entries
 
 def search_documents(index_name, query, category, limit=10, syntax='elastic'):
     """
@@ -167,3 +160,5 @@ def pretty(search_results):
         result_docs.append({k: v for k, v in  hit['_source'].items() if k in include_fields})
     return result_docs
 
+# with open(config_path, "w") as f:
+#     yaml.dump(config, f, default_flow_style=False)
