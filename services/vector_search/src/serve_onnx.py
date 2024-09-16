@@ -22,7 +22,6 @@ class ONNXVectorizer:
         sum_embeddings = torch.sum(token_embeddings * input_mask_expanded, 1)
         sum_mask = torch.clamp(input_mask_expanded.sum(1), min=1e-9)
         embedding = (sum_embeddings / sum_mask).numpy()
-        
         return embedding
 
 def get_embedder():
@@ -37,23 +36,3 @@ def get_embedder():
     return onnx_vectorizer
 
 onnx_vectorizer = get_embedder()
-
-if __name__ == '__main__':
-    sentences = [
-        "This is an example sentence.",
-        "Another sentence for embedding.",
-    ]
-
-    for sentence in sentences:
-        embedding = onnx_vectorizer.get_embedding(sentence)
-        print(f"Sentence: {sentence}")
-        print(f"Embedding shape: {embedding.shape}")
-        print(f"Embedding (first 5 values): {embedding[0][:5]}")
-        print()
-
-
-    emb1 = onnx_vectorizer.get_embedding(sentences[0]).flatten()
-    emb2 = onnx_vectorizer.get_embedding(sentences[1]).flatten()
-
-    similarity = cosine_similarity(emb1, emb2)
-    print(f"Cosine similarity between '{sentences[0]}' and '{sentences[1]}': {similarity}")
