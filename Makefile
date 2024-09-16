@@ -1,5 +1,6 @@
 CURRENT_DIR = $(shell pwd)
 NETWORK_NAME = service_network
+PROJECT_NAME = light_retrieval_flow
  
 include .env
 export
@@ -38,4 +39,23 @@ inference:
 	CONFIG_DIR=${CURRENT_DIR}  \
 	python3 src/light_retrieval_flow/inference.py
 
+build-vector-search:
+	docker build -f services/vector_search/Dockerfile -t adzhumurat/${PROJECT_NAME}_vector_search:latest .
 
+prepare-onnx:
+	docker run --rm \
+		--env-file ${CURRENT_DIR}/services/vector_search/.env  \
+	    -v "${CURRENT_DIR}/services/vector_search/src:/srv/src" \
+	    -v "${CURRENT_DIR}/data:/srv/data" \
+	    --name ${PROJECT_NAME}_container_onnx \
+		adzhumurat/${PROJECT_NAME}_vector_search:latest \
+		python3 src/prepare_onnx.py
+
+serve:
+	docker run --rm \
+		--env-file ${CURRENT_DIR}/services/vector_search/.env  \
+	    -v "${CURRENT_DIR}/services/vector_search/src:/srv/src" \
+	    -v "${CURRENT_DIR}/data:/srv/data" \
+	    --name ${PROJECT_NAME}_container_onnx \
+		adzhumurat/${PROJECT_NAME}_vector_search:latest \
+		serve

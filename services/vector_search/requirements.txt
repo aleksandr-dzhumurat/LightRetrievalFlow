@@ -1,0 +1,16 @@
+joblib==1.4.2
+numpy==1.26.4
+onnx==1.16.2
+onnxruntime==1.19.2
+pandas==2.2.2
+python-dotenv==1.0.1
+PyYAML==6.0.1
+requests==2.32.2
+scikit-learn==1.5.0
+scipy==1.13.1
+sentence-transformers==3.1.0
+torch==2.2.2
+tqdm==4.66.4
+# serve
+fastapi==0.95.2
+uvicorn==0.17.6
